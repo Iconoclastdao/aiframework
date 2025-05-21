@@ -1,0 +1,1212 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Universal Workflow Schema",
+  "description": "A comprehensive, extensible schema for defining AI-driven, blockchain-integrated workflows with natural language processing, UI rendering, and multi-language code generation (JavaScript, Python, Solidity, React, CSS, TypeScript, SCSS, Go). Designed for scalability, internationalization, and production-grade reliability.",
+  "type": "object",
+  "required": [
+    "function",
+    "metadata",
+    "schema",
+    "steps",
+    "access_policy",
+    "execution_policy",
+    "model_registry",
+    "codegen_config",
+    "reverse_config",
+    "plugins",
+    "tests"
+  ],
+  "properties": {
+    "function": {
+      "type": "string",
+      "description": "Unique workflow identifier, prefixed with 'workflow_' followed by a UUID v4 without hyphens.",
+      "pattern": "^workflow_[0-9a-f]{32}$",
+      "minLength": 41,
+      "maxLength": 41,
+      "examples": ["workflow_550e8400e29b41d4a716446655440000"]
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Metadata describing the workflow's purpose, versioning, and dependencies.",
+      "required": [
+        "schema_version",
+        "version",
+        "author",
+        "description",
+        "created",
+        "updated",
+        "tags",
+        "target_languages",
+        "language",
+        "dependencies"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "description": "Version of this schema, locked to 2.0.0 for enhanced features.",
+          "const": "2.0.0"
+        },
+        "version": {
+          "type": "string",
+          "description": "Workflow version in semantic format (MAJOR.MINOR.PATCH).",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "default": "1.0.0",
+          "examples": ["1.0.0", "2.1.3"]
+        },
+        "author": {
+          "type": "string",
+          "description": "Author or organization responsible for the workflow.",
+          "minLength": 1,
+          "examples": ["xAI", "John Doe"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed explanation of the workflow's functionality and use case.",
+          "minLength": 10,
+          "examples": ["A blockchain AI game with React UI for player interactions."]
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of workflow creation.",
+          "examples": ["2025-05-20T13:37:00Z"]
+        },
+        "updated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of last workflow update.",
+          "examples": ["2025-05-20T13:37:00Z"]
+        },
+        "tags": {
+          "type": "array",
+          "description": "Keywords for categorizing and searching workflows.",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "minItems": 1,
+          "examples": [["ai", "blockchain", "game", "react"]]
+        },
+        "target_languages": {
+          "type": "array",
+          "description": "Programming languages for code generation.",
+          "items": {
+            "type": "string",
+            "enum": ["javascript", "python", "solidity", "react", "css", "typescript", "scss", "go"]
+          },
+          "minItems": 1,
+          "uniqueItems": true,
+          "default": ["javascript", "react", "css"],
+          "examples": [["javascript", "solidity", "react", "css"]]
+        },
+        "language": {
+          "type": "string",
+          "description": "Primary natural language for NLP and user-facing text (ISO 639-1 codes).",
+          "enum": [
+            "en", "es", "fr", "zh", "ja", "ar", "ru", "de", "hi", "pt",
+            "it", "ko", "tr", "nl", "sv", "pl", "th", "vi", "id", "ms"
+          ],
+          "default": "en",
+          "examples": ["en", "zh"]
+        },
+        "dependencies": {
+          "type": "array",
+          "description": "External libraries or frameworks required for execution.",
+          "items": {
+            "type": "object",
+            "required": ["name", "version", "source"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "examples": ["react", "ethers"]
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^\\d+\\.\\d+\\.\\d+$",
+                "examples": ["18.2.0", "5.7.2"]
+              },
+              "source": {
+                "type": "string",
+                "format": "uri",
+                "examples": ["https://cdn.jsdelivr.net/npm/react@18.2.0"]
+              }
+            },
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "default": [
+            {
+              "name": "react",
+              "version": "18.2.0",
+              "source": "https://cdn.jsdelivr.net/npm/react@18.2.0"
+            },
+            {
+              "name": "react-dom",
+              "version": "18.2.0",
+              "source": "https://cdn.jsdelivr.net/npm/react-dom@18.2.0"
+            },
+            {
+              "name": "tailwindcss",
+              "version": "3.4.1",
+              "source": "https://cdn.tailwindcss.com"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "schema": {
+      "type": "object",
+      "description": "Definitions for workflow inputs, outputs, context, and natural language processing.",
+      "required": ["inputs", "context", "outputs", "nl_context"],
+      "properties": {
+        "inputs": {
+          "type": "object",
+          "description": "Input variables required to initialize the workflow.",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["type", "required"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["string", "number", "boolean", "array", "object"],
+                "default": "string"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "examples": ["Player's unique identifier"]
+              },
+              "required": {
+                "type": "boolean",
+                "default": true
+              },
+              "default": {
+                "type": ["string", "number", "boolean", "array", "object", "null"],
+                "examples": ["", 0, false, [], {}]
+              },
+              "constraints": {
+                "type": "object",
+                "description": "Validation rules for the input.",
+                "properties": {
+                  "minLength": { "type": "integer", "minimum": 0 },
+                  "maxLength": { "type": "integer", "minimum": 1 },
+                  "minimum": { "type": "number" },
+                  "maximum": { "type": "number" },
+                  "pattern": { "type": "string", "format": "regex" },
+                  "enum": { "type": "array", "items": { "type": ["string", "number", "boolean"] } }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "context": {
+          "type": "object",
+          "description": "Runtime context variables accessible during execution.",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["string", "number", "boolean", "array", "object"],
+                "default": "object"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "examples": ["Global game state"]
+              },
+              "scope": {
+                "type": "string",
+                "enum": ["global", "step", "session"],
+                "default": "global"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "outputs": {
+          "type": "object",
+          "description": "Output variables produced by the workflow.",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["string", "number", "boolean", "array", "object"],
+                "default": "string"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "examples": ["AI-generated game response"]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "nl_context": {
+          "type": "object",
+          "description": "Context for natural language processing and reverse translation.",
+          "required": ["prompts", "entities", "intent", "sentiment"],
+          "properties": {
+            "prompts": {
+              "type": "array",
+              "description": "Multilingual prompts for parsing natural language inputs.",
+              "items": {
+                "type": "object",
+                "required": ["language", "text"],
+                "properties": {
+                  "language": {
+                    "type": "string",
+                    "enum": [
+                      "en", "es", "fr", "zh", "ja", "ar", "ru", "de", "hi", "pt",
+                      "it", "ko", "tr", "nl", "sv", "pl", "th", "vi", "id", "ms"
+                    ],
+                    "default": "en"
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "examples": ["set player score to 100"]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "minItems": 1
+            },
+            "entities": {
+              "type": "object",
+              "description": "Named entities for NLP (e.g., variable names and types).",
+              "additionalProperties": {
+                "type": "string",
+                "enum": ["string", "number", "boolean", "array", "object"]
+              },
+              "examples": [{ "player_id": "string", "score": "number" }]
+            },
+            "intent": {
+              "type": "string",
+              "description": "Primary intent of the workflow (e.g., 'game', 'chat', 'predict').",
+              "minLength": 1,
+              "examples": ["game", "predict"]
+            },
+            "sentiment": {
+              "type": "string",
+              "description": "Sentiment for NLP processing.",
+              "enum": ["positive", "negative", "neutral"],
+              "default": "neutral"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "steps": {
+      "type": "array",
+      "description": "Ordered list of executable steps defining the workflow logic.",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "nl_phrase", "nl_examples", "access_control"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique step identifier, prefixed with 'step' followed by a number.",
+            "pattern": "^step[0-9]+$",
+            "examples": ["step1", "step2"]
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of operation to perform.",
+            "enum": [
+              "set",
+              "if",
+              "return",
+              "call",
+              "foreach",
+              "map",
+              "filter",
+              "parse_json",
+              "format_string",
+              "ai_infer",
+              "ai_train",
+              "ai_finetune",
+              "ai_classify",
+              "ai_embed",
+              "ai_evaluate",
+              "ai_explain",
+              "ui_render",
+              "ui_state",
+              "css_style",
+              "ui_event",
+              "crypto_sign",
+              "blockchain_operation",
+              "game_render",
+              "custom_"
+            ]
+          },
+          "nl_phrase": {
+            "type": "string",
+            "description": "Natural language representation of the step for reverse translation.",
+            "minLength": 1,
+            "examples": ["set player_id to user1"]
+          },
+          "nl_examples": {
+            "type": "array",
+            "description": "Example natural language inputs that map to this step.",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "examples": [["assign player_id to user1", "store player_id as user1"]]
+          },
+          "access_control": {
+            "type": "object",
+            "description": "Access control policies for the step.",
+            "required": ["roles", "permissions"],
+            "properties": {
+              "roles": {
+                "type": "array",
+                "description": "Roles authorized to execute the step.",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "examples": ["admin", "user"]
+                },
+                "minItems": 1
+              },
+              "permissions": {
+                "type": "array",
+                "description": "Permissions required to execute the step.",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "examples": ["execute_workflow", "view_ui"]
+                },
+                "minItems": 1
+              }
+            },
+            "additionalProperties": false
+          },
+          "target": {
+            "type": "string",
+            "description": "Variable name to store the step's output.",
+            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+            "examples": ["player_id", "game_response"]
+          },
+          "value": {
+            "type": ["object", "string", "number", "boolean", "array", "null"],
+            "description": "Value or reference (e.g., {get: 'var'}, {value: 5}).",
+            "examples": [{ "get": "player_id" }, { "value": 5 }]
+          },
+          "condition": {
+            "type": "object",
+            "description": "Conditional logic for 'if' steps.",
+            "required": ["compare"],
+            "properties": {
+              "compare": {
+                "type": "object",
+                "required": ["left", "op", "right"],
+                "properties": {
+                  "left": {
+                    "type": ["object", "string", "number", "boolean"],
+                    "examples": [{ "get": "score" }, 100]
+                  },
+                  "op": {
+                    "type": "string",
+                    "enum": [">", ">=", "<", "<=", "===", "!==", "=="]
+                  },
+                  "right": {
+                    "type": ["object", "string", "number", "boolean"],
+                    "examples": [{ "value": 100 }, "active"]
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "then": {
+            "type": "array",
+            "description": "Steps to execute if condition is true.",
+            "items": { "$ref": "#/properties/steps/items" }
+          },
+          "else": {
+            "type": "array",
+            "description": "Steps to execute if condition is false.",
+            "items": { "$ref": "#/properties/steps/items" }
+          },
+          "model": {
+            "type": "string",
+            "description": "AI model identifier for AI-related steps.",
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "examples": ["game-ai", "bert-base"]
+          },
+          "input": {
+            "type": ["object", "string", "number", "boolean", "array", "null"],
+            "description": "Input data for AI or call steps.",
+            "examples": [{ "get": "playerMove" }, "click"]
+          },
+          "data": {
+            "type": ["object", "string", "number", "boolean", "array", "null"],
+            "description": "Training or evaluation data for AI steps.",
+            "examples": [{ "get": "training_data" }, ["data1", "data2"]]
+          },
+          "parameters": {
+            "type": "object",
+            "description": "Configuration parameters for AI or other steps.",
+            "properties": {
+              "temperature": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 2,
+                "default": 1.0
+              },
+              "max_tokens": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 100
+              },
+              "epochs": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 3
+              },
+              "batch_size": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 32
+              },
+              "learning_rate": {
+                "type": "number",
+                "minimum": 0,
+                "default": 0.001
+              }
+            },
+            "additionalProperties": true
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "API endpoint for 'call' steps.",
+            "format": "uri-reference",
+            "examples": ["/api/move"]
+          },
+          "collection": {
+            "type": ["object", "array", "null"],
+            "description": "Data collection for 'foreach', 'map', or 'filter' steps.",
+            "examples": [{ "get": "players" }, ["player1", "player2"]]
+          },
+          "iterator": {
+            "type": "string",
+            "description": "Iterator variable for 'foreach' steps.",
+            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+            "examples": ["player"]
+          },
+          "body": {
+            "type": "array",
+            "description": "Steps to execute in 'foreach', 'map', or 'filter' loops.",
+            "items": { "$ref": "#/properties/steps/items" }
+          },
+          "component": {
+            "type": "object",
+            "description": "React component definition for 'ui_render' or 'game_render' steps.",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "div", "button", "input", "form", "span", "p",
+                  "h1", "h2", "h3", "img", "chart", "canvas", "table"
+                ],
+                "default": "div"
+              },
+              "props": {
+                "type": "object",
+                "description": "React component props (e.g., className, value).",
+                "additionalProperties": {
+                  "type": ["string", "number", "boolean", "object", "array", "null"]
+                },
+                "examples": [{ "className": "bg-black text-white", "value": "Click me" }]
+              },
+              "children": {
+                "type": "array",
+                "description": "Nested React components.",
+                "items": { "$ref": "#/properties/steps/items/properties/component" }
+              },
+              "hooks": {
+                "type": "array",
+                "description": "React hooks to include in the component.",
+                "items": {
+                  "type": "object",
+                  "required": ["type", "config"],
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["useState", "useEffect", "useContext", "useReducer"]
+                    },
+                    "config": {
+                      "type": "object",
+                      "description": "Hook configuration (e.g., initial state, dependencies).",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "state": {
+            "type": "object",
+            "description": "State definition for 'ui_state' steps.",
+            "required": ["name", "initial"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+                "examples": ["playerMove"]
+              },
+              "initial": {
+                "type": ["string", "number", "boolean", "array", "object", "null"],
+                "examples": ["", 0, false, [], {}]
+              },
+              "setter": {
+                "type": "string",
+                "description": "Step ID to update state.",
+                "pattern": "^step[0-9]+$"
+              }
+            },
+            "additionalProperties": false
+          },
+          "styles": {
+            "type": "object",
+            "description": "CSS styles or Tailwind classes for 'css_style' steps.",
+            "required": ["properties"],
+            "properties": {
+              "selector": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_\\-\\.\\#\\:]+$|^$",
+                "examples": ["#game-ui", ".button"]
+              },
+              "properties": {
+                "type": ["object", "array"],
+                "description": "CSS properties or Tailwind classes.",
+                "additionalProperties": { "type": "string" },
+                "examples": [
+                  { "padding": "16px", "background-color": "#000000" },
+                  ["bg-black", "text-white", "p-4"]
+                ]
+              },
+              "module": {
+                "type": "boolean",
+                "description": "Use CSS modules.",
+                "default": false
+              },
+              "framework": {
+                "type": "string",
+                "enum": ["css", "tailwind", "scss"],
+                "default": "tailwind"
+              }
+            },
+            "additionalProperties": false
+          },
+          "event": {
+            "type": "object",
+            "description": "Event handler for 'ui_event' steps.",
+            "required": ["type", "handler"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "click",
+                  "change",
+                  "submit",
+                  "mouseover",
+                  "keydown",
+                  "focus",
+                  "blur"
+                ],
+                "default": "click"
+              },
+              "handler": {
+                "type": "string",
+                "description": "Step ID to execute on event.",
+                "pattern": "^step[0-9]+$",
+                "examples": ["step3"]
+              }
+            },
+            "additionalProperties": false
+          },
+          "operation": {
+            "type": "string",
+            "description": "Blockchain operation type for 'blockchain_operation' steps.",
+            "enum": ["store", "read", "update", "delete"],
+            "examples": ["store"]
+          },
+          "contract": {
+            "type": "string",
+            "description": "Smart contract name for 'blockchain_operation' steps.",
+            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+            "examples": ["GameContract"]
+          },
+          "signature": {
+            "type": "object",
+            "description": "Cryptographic signature for 'crypto_sign' steps.",
+            "required": ["data", "algorithm"],
+            "properties": {
+              "data": {
+                "type": ["string", "object"],
+                "description": "Data to sign."
+              },
+              "algorithm": {
+                "type": "string",
+                "enum": ["ecdsa", "rsa", "ed25519"],
+                "default": "ecdsa"
+              }
+            },
+            "additionalProperties": false
+          },
+          "custom_schema_ref": {
+            "type": "string",
+            "description": "URI reference to a custom schema for 'custom_' steps.",
+            "format": "uri",
+            "examples": ["https://example.com/custom-step-schema.json"]
+          }
+        },
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "properties": { "type": { "const": "set" } },
+            "required": ["target", "value"]
+          },
+          {
+            "properties": { "type": { "const": "if" } },
+            "required": ["condition", "then"]
+          },
+          {
+            "properties": { "type": { "const": "return" } },
+            "required": ["value"]
+          },
+          {
+            "properties": { "type": { "const": "call" } },
+            "required": ["target", "endpoint"]
+          },
+          {
+            "properties": { "type": { "const": "foreach" } },
+            "required": ["collection", "iterator", "body"]
+          },
+          {
+            "properties": { "type": { "const": "map" } },
+            "required": ["collection", "iterator", "body", "target"]
+          },
+          {
+            "properties": { "type": { "const": "filter" } },
+            "required": ["collection", "iterator", "body", "target"]
+          },
+          {
+            "properties": { "type": { "const": "parse_json" } },
+            "required": ["input", "target"]
+          },
+          {
+            "properties": { "type": { "const": "format_string" } },
+            "required": ["template", "values", "target"]
+          },
+          {
+            "properties": { "type": { "const": "ai_infer" } },
+            "required": ["model", "input", "target"]
+          },
+          {
+            "properties": { "type": { "const": "ai_train" } },
+            "required": ["model", "data", "target"]
+          },
+          {
+            "properties": { "type": { "const": "ai_finetune" } },
+            "required": ["model", "data", "target"]
+          },
+          {
+            "properties": { "type": { "const": "ai_classify" } },
+            "required": ["model", "input", "target"]
+          },
+          {
+            "properties": { "type": { "const": "ai_embed" } },
+            "required": ["model", "input", "target"]
+          },
+          {
+            "properties": { "type": { "const": "ai_evaluate" } },
+            "required": ["model", "data", "target"]
+          },
+          {
+            "properties": { "type": { "const": "ai_explain" } },
+            "required": ["model", "input", "target"]
+          },
+          {
+            "properties": { "type": { "const": "ui_render" } },
+            "required": ["component", "target"]
+          },
+          {
+            "properties": { "type": { "const": "ui_state" } },
+            "required": ["state"]
+          },
+          {
+            "properties": { "type": { "const": "css_style" } },
+            "required": ["styles"]
+          },
+          {
+            "properties": { "type": { "const": "ui_event" } },
+            "required": ["event"]
+          },
+          {
+            "properties": { "type": { "const": "crypto_sign" } },
+            "required": ["signature", "target"]
+          },
+          {
+            "properties": { "type": { "const": "blockchain_operation" } },
+            "required": ["operation", "contract", "data"]
+          },
+          {
+            "properties": { "type": { "const": "game_render" } },
+            "required": ["component", "target"]
+          },
+          {
+            "properties": { "type": { "pattern": "^custom_" } },
+            "required": ["custom_schema_ref", "target"]
+          }
+        ]
+      },
+      "minItems": 1
+    },
+    "access_policy": {
+      "type": "object",
+      "description": "Workflow-level access control policies.",
+      "required": ["roles", "permissions"],
+      "properties": {
+        "roles": {
+          "type": "array",
+          "description": "Roles authorized to execute the workflow.",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "examples": ["admin", "user", "developer"]
+          },
+          "minItems": 1
+        },
+        "permissions": {
+          "type": "array",
+          "description": "Permissions required for workflow execution.",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "examples": ["execute_workflow", "execute_blockchain", "view_ui"]
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "execution_policy": {
+      "type": "object",
+      "description": "Constraints and policies for workflow execution.",
+      "required": ["max_runs_per_minute", "max_concurrent_runs", "priority", "timeout"],
+      "properties": {
+        "max_runs_per_minute": {
+          "type": "integer",
+          "description": "Maximum workflow executions per minute.",
+          "minimum": 1,
+          "default": 60
+        },
+        "max_concurrent_runs": {
+          "type": "integer",
+          "description": "Maximum concurrent workflow executions.",
+          "minimum": 1,
+          "default": 10
+        },
+        "priority": {
+          "type": "string",
+          "description": "Execution priority for resource allocation.",
+          "enum": ["low", "medium", "high"],
+          "default": "medium"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Maximum execution time in seconds.",
+          "minimum": 1,
+          "default": 300
+        }
+      },
+      "additionalProperties": false
+    },
+    "model_registry": {
+      "type": "object",
+      "description": "Registry of AI models used in the workflow.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["name", "version", "type", "source", "capabilities"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "examples": ["game-ai", "llama-3"]
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$",
+            "examples": ["1.0.0"]
+          },
+          "source": {
+            "type": "string",
+            "format": "uri",
+            "examples": ["https://api.x.ai/models/game-ai"]
+          },
+          "type": {
+            "type": "string",
+            "enum": ["nlp", "vision", "tabular", "audio", "multimodal", "custom"],
+            "default": "nlp"
+          },
+          "capabilities": {
+            "type": "array",
+            "description": "Model capabilities (e.g., generation, classification).",
+            "items": {
+              "type": "string",
+              "enum": [
+                "generation",
+                "classification",
+                "embedding",
+                "detection",
+                "translation",
+                "summarization",
+                "explanation"
+              ]
+            },
+            "minItems": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "codegen_config": {
+      "type": "object",
+      "description": "Configuration for generating code in target languages.",
+      "required": ["javascript", "python", "solidity", "react", "css"],
+      "properties": {
+        "javascript": {
+          "type": "object",
+          "required": ["async", "module", "minify"],
+          "properties": {
+            "async": {
+              "type": "boolean",
+              "default": true
+            },
+            "module": {
+              "type": "string",
+              "enum": ["esm", "commonjs"],
+              "default": "esm"
+            },
+            "minify": {
+              "type": "boolean",
+              "default": false
+            },
+            "target": {
+              "type": "string",
+              "enum": ["es5", "es6", "esnext"],
+              "default": "es6"
+            }
+          },
+          "additionalProperties": false
+        },
+        "python": {
+          "type": "object",
+          "required": ["async", "version", "imports"],
+          "properties": {
+            "async": {
+              "type": "boolean",
+              "default": true
+            },
+            "version": {
+              "type": "string",
+              "enum": ["3.8", "3.9", "3.10", "3.11", "3.12"],
+              "default": "3.10"
+            },
+            "imports": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": ["asyncio", "typing", "pydantic"]
+            },
+            "type_hints": {
+              "type": "boolean",
+              "description": "Include type hints in generated code.",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "solidity": {
+          "type": "object",
+          "required": ["version", "contract_name"],
+          "properties": {
+            "version": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+$",
+              "default": "0.8.20"
+            },
+            "contract_name": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+              "default": "WorkflowContract"
+            },
+            "optimize": {
+              "type": "boolean",
+              "description": "Enable Solidity compiler optimizations.",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "react": {
+          "type": "object",
+          "required": ["component_type", "css_framework", "typescript", "jsx"],
+          "properties": {
+            "component_type": {
+              "type": "string",
+              "enum": ["functional", "class"],
+              "default": "functional"
+            },
+            "css_framework": {
+              "type": "string",
+              "enum": ["tailwind", "css", "scss"],
+              "default": "tailwind"
+            },
+            "typescript": {
+              "type": "boolean",
+              "default": false
+            },
+            "jsx": {
+              "type": "boolean",
+              "default": true
+            },
+            "hooks": {
+              "type": "array",
+              "description": "Default React hooks to include.",
+              "items": {
+                "type": "string",
+                "enum": ["useState", "useEffect", "useContext", "useReducer"]
+              },
+              "default": ["useState", "useEffect"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "css": {
+          "type": "object",
+          "required": ["module", "minify"],
+          "properties": {
+            "module": {
+              "type": "boolean",
+              "default": false
+            },
+            "minify": {
+              "type": "boolean",
+              "default": false
+            },
+            "prefix": {
+              "type": "string",
+              "description": "CSS class prefix for scoping.",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_-]*$",
+              "examples": ["wf-"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "typescript": {
+          "type": "object",
+          "required": ["strict", "target"],
+          "properties": {
+            "strict": {
+              "type": "boolean",
+              "description": "Enable strict TypeScript mode.",
+              "default": true
+            },
+            "target": {
+              "type": "string",
+              "enum": ["es5", "es6", "esnext"],
+              "default": "es6"
+            }
+          },
+          "additionalProperties": false
+        },
+        "scss": {
+          "type": "object",
+          "required": ["module", "minify"],
+          "properties": {
+            "module": {
+              "type": "boolean",
+              "default": false
+            },
+            "minify": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "go": {
+          "type": "object",
+          "required": ["version", "module"],
+          "properties": {
+            "version": {
+              "type": "string",
+              "enum": ["1.18", "1.19", "1.20", "1.21"],
+              "default": "1.20"
+            },
+            "module": {
+              "type": "boolean",
+              "description": "Use Go modules.",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "reverse_config": {
+      "type": "object",
+      "description": "Configuration for reverse translation to natural language.",
+      "required": ["language", "style", "reverse_template"],
+      "properties": {
+        "language": {
+          "type": "string",
+          "enum": [
+            "en", "es", "fr", "zh", "ja", "ar", "ru", "de", "hi", "pt",
+            "it", "ko", "tr", "nl", "sv", "pl", "th", "vi", "id", "ms"
+          ],
+          "default": "en"
+        },
+        "style": {
+          "type": "string",
+          "enum": ["concise", "verbose", "technical", "user_friendly"],
+          "default": "concise"
+        },
+        "reverse_template": {
+          "type": "string",
+          "description": "Template for natural language output.",
+          "minLength": 1,
+          "examples": ["Step {step.id}: {step.nl_phrase}"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "plugins": {
+      "type": "array",
+      "description": "External plugins to extend workflow functionality.",
+      "items": {
+        "type": "object",
+        "required": ["name", "version", "source"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "examples": ["tailwindcss", "ethers"]
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$",
+            "examples": ["3.4.1"]
+          },
+          "source": {
+            "type": "string",
+            "format": "uri",
+            "examples": ["https://cdn.tailwindcss.com"]
+          },
+          "config": {
+            "type": "object",
+            "description": "Plugin-specific configuration.",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "default": [
+        {
+          "name": "tailwindcss",
+          "version": "3.4.1",
+          "source": "https://cdn.tailwindcss.com"
+        }
+      ]
+    },
+    "tests": {
+      "type": "array",
+      "description": "Test cases to validate workflow behavior.",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "inputs", "expected"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "examples": ["TestScoreUpdate"]
+          },
+          "type": {
+            "type": "string",
+            "enum": ["example", "unit", "integration", "e2e"],
+            "default": "unit"
+          },
+          "inputs": {
+            "type": "object",
+            "description": "Input data for the test.",
+            "additionalProperties": true
+          },
+          "context": {
+            "type": "object",
+            "description": "Context data for the test.",
+            "additionalProperties": true
+          },
+          "expected": {
+            "type": "object",
+            "description": "Expected output of the test.",
+            "additionalProperties": true
+          },
+          "steps": {
+            "type": "array",
+            "description": "Subset of steps to execute for the test.",
+            "items": { "$ref": "#/properties/steps/items" }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Custom schema extensions for advanced use cases.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["name", "schema_ref"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "examples": ["custom_game_logic"]
+          },
+          "schema_ref": {
+            "type": "string",
+            "format": "uri",
+            "examples": ["https://example.com/custom-game-schema.json"]
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$",
+            "examples": ["1.0.0"]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
