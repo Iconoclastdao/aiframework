@@ -1,33 +1,42 @@
+// ReasoningEngine.js
+
 class ReasoningEngine {
-  constructor(knowledgeGraph, auditLogger) {
-    this.kg = knowledgeGraph;
+  constructor(knowledgePool, auditLogger) {
+    this.kg = knowledgePool;
     this.logger = auditLogger;
   }
 
   query(subject, predicate) {
-    return this.kg.get(subject, predicate);
+    const fact = this.kg.getFact(subject, predicate);
+    this.logger.log('query', { subject, predicate, result: fact });
+    return fact;
   }
 
-  assert(fact) {
-    this.kg.add(fact);
+  assert(fact, confidence = 1.0) {
+    this.kg.addFact(fact, confidence);
     this.logger.log('assert', fact);
   }
 
-  explain(fact) {
-    const trace = this.kg.trace(fact);
-    this.logger.log('explain', { fact, trace });
-    return trace;
+  explain(subject, predicate) {
+    const fact = this.kg.getFact(subject, predicate);
+    const explanation = fact
+      ? `Fact exists: ${subject} ${predicate} ${fact.object}`
+      : `No known fact: ${subject} ${predicate}`;
+    this.logger.log('explain', { subject, predicate, explanation });
+    return explanation;
   }
 
-  challenge(fact) {
-    const verification = this.kg.verify(fact);
-    this.logger.log('challenge', { fact, verification });
-    return verification;
+  challenge(subject, predicate, expected) {
+    const fact = this.kg.getFact(subject, predicate);
+    const verdict = fact?.object === expected;
+    this.logger.log('challenge', { subject, predicate, expected, actual: fact?.object, verdict });
+    return verdict;
   }
 
-  think(goal) {
-    const result = this.kg.reason(goal);
-    this.logger.log('think', { goal, result });
+  think(goalFn) {
+    const facts = this.kg.exportFacts();
+    const result = goalFn(facts);
+    this.logger.log('think', { goal: goalFn.toString(), result });
     return result;
   }
 }
